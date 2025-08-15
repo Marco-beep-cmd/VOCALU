@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador Vocal Personalizado</title>
+    <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.8em;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #b0b0b0;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .left-panel, .right-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+
+        .btn-calibrate {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #ff4757, #ff3742);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(45deg, #5352ed, #3742fa);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .frequency-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .frequency-main {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .frequency-note {
+            font-size: 1.5em;
+            opacity: 0.9;
+        }
+
+        .confidence-meter {
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .confidence-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ffa726, #66bb6a);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .vocal-analysis {
+            margin-bottom: 20px;
+        }
+
+        .analysis-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00d4ff;
+        }
+
+        .analysis-label {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-bottom: 5px;
+        }
+
+        .analysis-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .vocal-profile {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .profile-type {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .profile-details {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .spectrum-visualizer {
+            background: rgba(0, 0, 0, 0.3);
+            height: 150px;
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spectrum-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pitch-tracker {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .pitch-history {
+            display: flex;
+            height: 60px;
+            align-items: end;
+            gap: 2px;
+            margin-top: 15px;
+        }
+
+        .pitch-bar {
+            background: linear-gradient(to top, #00d4ff, #ff00ff);
+            width: 3px;
+            transition: height 0.2s ease;
+        }
+
+        .gender-selector {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .gender-selector h3 {
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        .gender-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            border-radius: 25px;
+            color: white;
+            padding: 12px 40px 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            min-width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .gender-select:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .gender-select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .gender-select option {
+            background: #1a1a2e;
+            color: white;
+            padding: 10px;
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .calibration-panel {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .calibration-steps {
+            list-style: none;
+            padding: 0;
+        }
+
+        .calibration-steps li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .calibration-steps li:before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ffc107;
+            color: #000;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .calibration-steps {
+            counter-reset: step-counter;
+        }
+
+        .recording-indicator {
+            display: none;
+            background: linear-gradient(45deg, #ff4757, #ff6b35);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            text-align: center;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .accuracy-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .title {
+                font-size: 2.2em;
+            }
+            
+            .controls {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 1.8em;
+            }
+            
+            .subtitle {
+                font-size: 1em;
+            }
+            
+            .controls {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 14px;
+            }
+            
+            .accuracy-metrics {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .frequency-main {
+                font-size: 2.2em !important;
+            }
+            
+            .frequency-note {
+                font-size: 1.2em !important;
+            }
+            
+            .analysis-value {
+                font-size: 1.1em !important;
+            }
+            
+            .profile-type {
+                font-size: 1.6em !important;
+            }
+            
+            .profile-details {
+                font-size: 0.9em !important;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 15px;
+            }
+            
+            .calibration-steps li {
+                font-size: 0.9em;
+                padding: 8px 0;
+            }
+            
+            .gender-selector {
+                padding: 15px;
+            }
+            
+            .gender-select {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+                margin: 5px;
+            }
+            
+            .title {
+                font-size: 1.5em;
+            }
+            
+            .subtitle {
+                font-size: 0.9em;
+            }
+            
+            .frequency-main {
+                font-size: 1.8em !important;
+            }
+            
+            .profile-type {
+                font-size: 1.3em !important;
+            }
+            
+            .btn {
+                padding: 12px;
+                font-size: 13px;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 12px;
+            }
+            
+            .analysis-item {
+                padding: 12px;
+            }
+            
+            .metric-card {
+                padding: 12px;
+            }
+            
+            .spectrum-visualizer {
+                height: 120px;
+            }
+            
+            .pitch-tracker {
+                padding: 15px;
+            }
+            
+            .pitch-history {
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎤 Análisis Vocal Personalizado</h1>
+            <p class="subtitle">Análisis preciso y detallado de TU voz única</p>
+        </div>
+
+        <div class="gender-selector">
+            <h3>🚻 Selecciona tu género vocal</h3>
+            <div class="select-wrapper">
+                <select id="genderSelect" class="gender-select">
+                    <option value="">-- Selecciona tu género --</option>
+                    <option value="male">👨 Hombre (Tenor/Barítono/Bajo)</option>
+                    <option value="female">👩 Mujer (Soprano/Mezzosoprano/Contralto)</option>
+                </select>
+                <span class="select-arrow">▼</span>
+            </div>
+        </div>
+
+        <div class="calibration-panel">
+            <h3>🎯 Proceso de Calibración Personal</h3>
+            <ol class="calibration-steps">
+                <li>Primero haz clic en "Calibrar Voz" para ajustar la sensibilidad</li>
+                <li>Habla normalmente durante 5 segundos para calibrar</li>
+                <li>Luego haz clic en "Iniciar Análisis Completo"</li>
+                <li>Canta tu nota más grave y sostenla 3 segundos</li>
+                <li>Canta tu nota más aguda y sostenla 3 segundos</li>
+                <li>Haz escalas vocales para mapear tu rango completo</li>
+            </ol>
+        </div>
+
+        <div class="controls">
+            <button id="calibrateBtn" class="btn btn-calibrate">🎯 Calibrar Voz</button>
+            <button id="startBtn" class="btn btn-start">🚀 Análisis Completo</button>
+            <button id="stopBtn" class="btn btn-stop" disabled>⏹️ Detener</button>
+            <button id="resetBtn" class="btn btn-reset">🔄 Reiniciar</button>
+        </div>
+
+        <div id="recordingIndicator" class="recording-indicator">
+            🔴 ANALIZANDO TU VOZ - Sigue las instrucciones
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="frequency-display" id="frequencyDisplay">
+                    <div class="frequency-main">Calibra tu voz primero</div>
+                    <div class="frequency-note">--</div>
+                    <div class="confidence-meter">
+                        <div class="confidence-bar" id="confidenceBar"></div>
+                    </div>
+                    <small>Confianza de detección</small>
+                </div>
+
+                <div class="vocal-analysis">
+                    <h3>📊 Tu Análisis Vocal</h3>
+                    <div class="analysis-item">
+                        <div class="analysis-label">Nota más grave detectada</div>
+                        <div class="analysis-value" id="lowestNote">No detectada</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-label">Nota más aguda detectada</div>
+                        <div class="analysis-value" id="highestNote">No detectada</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-label">Rango total (semitonos)</div>
+                        <div class="analysis-value" id="rangeSize">0</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-label">Nota fundamental promedio</div>
+                        <div class="analysis-value" id="averageNote">--</div>
+                    </div>
+                </div>
+
+                <div class="accuracy-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="stabilityScore">0%</div>
+                        <div class="metric-label">Estabilidad Tonal</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="clarityScore">0%</div>
+                        <div class="metric-label">Claridad Vocal</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="powerScore">0%</div>
+                        <div class="metric-label">Potencia Vocal</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="vocal-profile" id="vocalProfile">
+                    <div class="profile-type">Tu perfil vocal personalizado</div>
+                    <div class="profile-details">Completa el análisis para obtener tu clasificación precisa</div>
+                </div>
+
+                <div class="spectrum-visualizer">
+                    <canvas class="spectrum-canvas" id="spectrumCanvas"></canvas>
+                </div>
+
+                <div class="pitch-tracker">
+                    <h4>📈 Historial de Tono en Tiempo Real</h4>
+                    <div class="pitch-history" id="pitchHistory"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PersonalizedVocalAnalyzer {
+            constructor() {
+                this.audioContext = null;
+                this.analyser = null;
+                this.microphone = null;
+                this.dataArray = null;
+                this.frequencyData = null;
+                this.isRecording = false;
+                this.isCalibrated = false;
+                this.selectedGender = '';
+                this.calibrationData = {
+                    noiseFloor: -60,
+                    averageAmplitude: 0,
+                    baseFrequency: 0
+                };
+                
+                // Datos de análisis personal
+                this.personalData = {
+                    lowestFreq: Infinity,
+                    highestFreq: 0,
+                    frequencies: [],
+                    amplitudes: [],
+                    confidences: [],
+                    noteStability: [],
+                    totalSamples: 0
+                };
+                
+                this.pitchHistory = [];
+                this.maxHistoryLength = 100;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.setupCanvas();
+            }
+
+            initializeElements() {
+                this.genderSelect = document.getElementById('genderSelect');
+                this.calibrateBtn = document.getElementById('calibrateBtn');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.frequencyDisplay = document.getElementById('frequencyDisplay');
+                this.confidenceBar = document.getElementById('confidenceBar');
+                this.lowestNote = document.getElementById('lowestNote');
+                this.highestNote = document.getElementById('highestNote');
+                this.rangeSize = document.getElementById('rangeSize');
+                this.averageNote = document.getElementById('averageNote');
+                this.vocalProfile = document.getElementById('vocalProfile');
+                this.recordingIndicator = document.getElementById('recordingIndicator');
+                this.stabilityScore = document.getElementById('stabilityScore');
+                this.clarityScore = document.getElementById('clarityScore');
+                this.powerScore = document.getElementById('powerScore');
+                this.spectrumCanvas = document.getElementById('spectrumCanvas');
+                this.pitchHistoryDiv = document.getElementById('pitchHistory');
+            }
+
+            bindEvents() {
+                this.genderSelect.addEventListener('change', (e) => this.onGenderChange(e));
+                this.calibrateBtn.addEventListener('click', () => this.startCalibration());
+                this.startBtn.addEventListener('click', () => this.startAnalysis());
+                this.stopBtn.addEventListener('click', () => this.stopAnalysis());
+                this.resetBtn.addEventListener('click', () => this.resetAnalysis());
+            }
+
+            onGenderChange(e) {
+                this.selectedGender = e.target.value;
+                if (this.selectedGender) {
+                    this.calibrateBtn.disabled = false;
+                    this.updateGenderSpecificSettings();
+                } else {
+                    this.calibrateBtn.disabled = true;
+                    this.startBtn.disabled = true;
+                }
+            }
+
+            updateGenderSpecificSettings() {
+                // Ajustar rangos esperados según el género
+                if (this.selectedGender === 'male') {
+                    this.expectedRange = { min: 80, max: 500, typical: 150 };
+                } else if (this.selectedGender === 'female') {
+                    this.expectedRange = { min: 150, max: 1200, typical: 250 };
+                }
+                
+                // Actualizar el mensaje de calibración
+                const genderText = this.selectedGender === 'male' ? 'masculina' : 'femenina';
+                this.frequencyDisplay.innerHTML = `
+                    <div class="frequency-main">Género seleccionado</div>
+                    <div class="frequency-note">Voz ${genderText} - Listo para calibrar</div>
+                `;
+            }
+
+            setupCanvas() {
+                this.canvasContext = this.spectrumCanvas.getContext('2d');
+                this.spectrumCanvas.width = this.spectrumCanvas.offsetWidth;
+                this.spectrumCanvas.height = this.spectrumCanvas.offsetHeight;
+            }
+
+            async startCalibration() {
+                if (!this.selectedGender) {
+                    alert('Por favor selecciona tu género vocal primero');
+                    return;
+                }
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 44100
+                        }
+                    });
+                    
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.microphone = this.audioContext.createMediaStreamSource(stream);
+                    
+                    this.analyser.fftSize = 16384; // Mayor resolución
+                    this.analyser.smoothingTimeConstant = 0.1; // Menos suavizado para más precisión
+                    this.analyser.minDecibels = -90;
+                    this.analyser.maxDecibels = -10;
+                    
+                    this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
+                    this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+                    
+                    this.microphone.connect(this.analyser);
+                    
+                    this.calibrateBtn.disabled = true;
+                    this.recordingIndicator.style.display = 'block';
+                    this.recordingIndicator.textContent = '🎯 CALIBRANDO - Habla normalmente por 5 segundos';
+                    
+                    this.runCalibration();
+                } catch (error) {
+                    alert('Error al acceder al micrófono: ' + error.message);
+                }
+            }
+
+            runCalibration() {
+                let calibrationSamples = [];
+                let sampleCount = 0;
+                const maxSamples = 250; // ~5 segundos a 50fps
+                
+                const calibrate = () => {
+                    if (sampleCount >= maxSamples) {
+                        this.processCalibrationData(calibrationSamples);
+                        return;
+                    }
+                    
+                    this.analyser.getFloatFrequencyData(this.dataArray);
+                    
+                    // Calcular nivel de ruido y amplitud promedio
+                    let maxMagnitude = -Infinity;
+                    let totalMagnitude = 0;
+                    let samples = 0;
+                    
+                    for (let i = 10; i < this.dataArray.length; i++) {
+                        if (this.dataArray[i] > -80) {
+                            totalMagnitude += this.dataArray[i];
+                            samples++;
+                            if (this.dataArray[i] > maxMagnitude) {
+                                maxMagnitude = this.dataArray[i];
+                            }
+                        }
+                    }
+                    
+                    if (samples > 0) {
+                        calibrationSamples.push({
+                            averageMagnitude: totalMagnitude / samples,
+                            maxMagnitude: maxMagnitude,
+                            fundamentalFreq: this.findFundamentalFrequency()
+                        });
+                    }
+                    
+                    sampleCount++;
+                    this.recordingIndicator.textContent = 
+                        `🎯 CALIBRANDO - ${Math.round((sampleCount/maxSamples)*100)}%`;
+                    
+                    setTimeout(calibrate, 20);
+                };
+                
+                calibrate();
+            }
+
+            processCalibrationData(samples) {
+                // Procesar datos de calibración
+                const validSamples = samples.filter(s => s.fundamentalFreq > 50);
+                
+                if (validSamples.length > 0) {
+                    this.calibrationData.noiseFloor = Math.max(
+                        ...validSamples.map(s => s.averageMagnitude)
+                    ) - 20;
+                    
+                    this.calibrationData.averageAmplitude = validSamples.reduce(
+                        (sum, s) => sum + s.averageMagnitude, 0
+                    ) / validSamples.length;
+                    
+                    this.calibrationData.baseFrequency = validSamples.reduce(
+                        (sum, s) => sum + s.fundamentalFreq, 0
+                    ) / validSamples.length;
+                }
+                
+                this.isCalibrated = true;
+                this.calibrateBtn.disabled = false;
+                this.startBtn.disabled = false;
+                this.recordingIndicator.style.display = 'none';
+                
+                this.frequencyDisplay.innerHTML = `
+                    <div class="frequency-main">✅ Calibración Completada</div>
+                    <div class="frequency-note">Tu voz está optimizada para análisis</div>
+                `;
+                
+                // Limpiar recursos de calibración
+                if (this.microphone) this.microphone.disconnect();
+                if (this.audioContext) this.audioContext.close();
+            }
+
+            async startAnalysis() {
+                if (!this.isCalibrated) {
+                    alert('Por favor calibra tu voz primero');
+                    return;
+                }
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 44100
+                        }
+                    });
+                    
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.microphone = this.audioContext.createMediaStreamSource(stream);
+                    
+                    this.analyser.fftSize = 16384;
+                    this.analyser.smoothingTimeConstant = 0.1;
+                    this.analyser.minDecibels = this.calibrationData.noiseFloor;
+                    this.analyser.maxDecibels = -10;
+                    
+                    this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
+                    this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+                    
+                    this.microphone.connect(this.analyser);
+                    
+                    this.isRecording = true;
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.calibrateBtn.disabled = true;
+                    this.recordingIndicator.style.display = 'block';
+                    this.recordingIndicator.textContent = '🎤 ANALIZANDO TU VOZ - Emite sonidos vocales';
+                    
+                    this.analyzePersonalVoice();
+                } catch (error) {
+                    alert('Error al acceder al micrófono: ' + error.message);
+                }
+            }
+
+            analyzePersonalVoice() {
+                if (!this.isRecording) return;
+
+                this.analyser.getFloatFrequencyData(this.dataArray);
+                this.analyser.getByteFrequencyData(this.frequencyData);
+                
+                const frequency = this.findFundamentalFrequency();
+                const confidence = this.calculateConfidence(frequency);
+                const amplitude = this.calculateAmplitude();
+                
+                if (frequency > 50 && frequency < 2000 && confidence > 0.3) {
+                    this.updatePersonalData(frequency, confidence, amplitude);
+                    this.updateDisplays(frequency, confidence);
+                    this.updateSpectrum();
+                    this.updatePitchHistory(frequency);
+                    this.updatePersonalProfile();
+                }
+                
+                requestAnimationFrame(() => this.analyzePersonalVoice());
+            }
+
+            findFundamentalFrequency() {
+                const sampleRate = this.audioContext.sampleRate;
+                const nyquist = sampleRate / 2;
+                const binSize = nyquist / this.dataArray.length;
+                
+                // Usar algoritmo de autocorrelación mejorado
+                const minFreq = 60; // Hz
+                const maxFreq = 1500; // Hz
+                const minBin = Math.floor(minFreq / binSize);
+                const maxBin = Math.floor(maxFreq / binSize);
+                
+                let maxMagnitude = -Infinity;
+                let maxIndex = 0;
+                
+                // Buscar pico principal con filtrado de armónicos
+                for (let i = minBin; i < maxBin; i++) {
+                    if (this.dataArray[i] > maxMagnitude && 
+                        this.dataArray[i] > this.calibrationData.noiseFloor + 10) {
+                        
+                        // Verificar que no sea un armónico
+                        let isHarmonic = false;
+                        for (let h = 2; h <= 4; h++) {
+                            const harmonicBin = Math.floor(i / h);
+                            if (harmonicBin >= minBin && 
+                                this.dataArray[harmonicBin] > this.dataArray[i] - 6) {
+                                isHarmonic = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!isHarmonic) {
+                            maxMagnitude = this.dataArray[i];
+                            maxIndex = i;
+                        }
+                    }
+                }
+                
+                if (maxMagnitude > this.calibrationData.noiseFloor + 15) {
+                    // Interpolación parabólica para mayor precisión
+                    let y1 = this.dataArray[maxIndex - 1] || maxMagnitude;
+                    let y2 = maxMagnitude;
+                    let y3 = this.dataArray[maxIndex + 1] || maxMagnitude;
+                    
+                    let a = (y1 - 2*y2 + y3) / 2;
+                    let b = (y3 - y1) / 2;
+                    
+                    let peakOffset = 0;
+                    if (a !== 0) {
+                        peakOffset = -b / (2*a);
+                    }
+                    
+                    return (maxIndex + peakOffset) * binSize;
+                }
+                
+                return 0;
+            }
+
+            calculateConfidence(frequency) {
+                if (frequency === 0) return 0;
+                
+                const binSize = this.audioContext.sampleRate / 2 / this.dataArray.length;
+                const bin = Math.floor(frequency / binSize);
+                
+                if (bin < 1 || bin >= this.dataArray.length - 1) return 0;
+                
+                const magnitude = this.dataArray[bin];
+                const avgNoise = this.calibrationData.noiseFloor;
+                
+                // Calcular SNR (Signal-to-Noise Ratio)
+                const snr = magnitude - avgNoise;
+                const maxSNR = -10 - avgNoise; // Máximo esperado
+                
+                return Math.min(Math.max(snr / maxSNR, 0), 1);
+            }
+
+            calculateAmplitude() {
+                let totalAmplitude = 0;
+                let count = 0;
+                
+                for (let i = 0; i < this.frequencyData.length; i++) {
+                    totalAmplitude += this.frequencyData[i];
+                    count++;
+                }
+                
+                return count > 0 ? totalAmplitude / count : 0;
+            }
+
+            updatePersonalData(frequency, confidence, amplitude) {
+                this.personalData.frequencies.push(frequency);
+                this.personalData.confidences.push(confidence);
+                this.personalData.amplitudes.push(amplitude);
+                this.personalData.totalSamples++;
+                
+                if (frequency < this.personalData.lowestFreq) {
+                    this.personalData.lowestFreq = frequency;
+                }
+                
+                if (frequency > this.personalData.highestFreq) {
+                    this.personalData.highestFreq = frequency;
+                }
+                
+                // Mantener solo las últimas 500 muestras para rendimiento
+                if (this.personalData.frequencies.length > 500) {
+                    this.personalData.frequencies.shift();
+                    this.personalData.confidences.shift();
+                    this.personalData.amplitudes.shift();
+                }
+            }
+
+            updateDisplays(frequency, confidence) {
+                const note = this.frequencyToNote(frequency);
+                
+                this.frequencyDisplay.innerHTML = `
+                    <div class="frequency-main">${frequency.toFixed(2)} Hz</div>
+                    <div class="frequency-note">${note}</div>
+                `;
+                
+                this.confidenceBar.style.width = `${confidence * 100}%`;
+                
+                if (this.personalData.lowestFreq !== Infinity) {
+                    this.lowestNote.textContent = 
+                        `${this.frequencyToNote(this.personalData.lowestFreq)} (${this.personalData.lowestFreq.toFixed(1)} Hz)`;
+                }
+                
+                if (this.personalData.highestFreq > 0) {
+                    this.highestNote.textContent = 
+                        `${this.frequencyToNote(this.personalData.highestFreq)} (${this.personalData.highestFreq.toFixed(1)} Hz)`;
+                }
+                
+                if (this.personalData.lowestFreq !== Infinity && this.personalData.highestFreq > 0) {
+                    const semitones = this.calculateSemitones(
+                        this.personalData.lowestFreq, 
+                        this.personalData.highestFreq
+                    );
+                    this.rangeSize.textContent = `${semitones} semitonos`;
+                }
+                
+                if (this.personalData.frequencies.length > 10) {
+                    const avgFreq = this.personalData.frequencies.reduce((a, b) => a + b) / 
+                                   this.personalData.frequencies.length;
+                    this.averageNote.textContent = 
+                        `${this.frequencyToNote(avgFreq)} (${avgFreq.toFixed(1)} Hz)`;
+                }
+            }
+
+            updateSpectrum() {
+                const canvas = this.spectrumCanvas;
+                const ctx = this.canvasContext;
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Dibujar espectro de frecuencias
+                const barWidth = width / this.frequencyData.length * 4;
+                let x = 0;
+                
+                for (let i = 0; i < this.frequencyData.length / 4; i++) {
+                    const barHeight = (this.frequencyData[i] / 255) * height * 0.8;
+                    
+                    const hue = (i / (this.frequencyData.length / 4)) * 360;
+                    ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+                    ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+                    
+                    x += barWidth + 1;
+                }
+                
+                // Dibujar línea de frecuencia fundamental
+                if (this.personalData.frequencies.length > 0) {
+                    const lastFreq = this.personalData.frequencies[this.personalData.frequencies.length - 1];
+                    const maxFreq = this.audioContext.sampleRate / 8; // Rango visible
+                    const freqX = (lastFreq / maxFreq) * width;
+                    
+                    ctx.strokeStyle = '#ff0080';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(freqX, 0);
+                    ctx.lineTo(freqX, height);
+                    ctx.stroke();
+                }
+            }
+
+            updatePitchHistory(frequency) {
+                this.pitchHistory.push(frequency);
+                if (this.pitchHistory.length > this.maxHistoryLength) {
+                    this.pitchHistory.shift();
+                }
+                
+                // Actualizar visualización del historial
+                const maxFreq = Math.max(...this.pitchHistory);
+                const minFreq = Math.min(...this.pitchHistory);
+                const range = maxFreq - minFreq || 1;
+                
+                this.pitchHistoryDiv.innerHTML = '';
+                this.pitchHistory.forEach(freq => {
+                    const bar = document.createElement('div');
+                    bar.className = 'pitch-bar';
+                    const height = ((freq - minFreq) / range) * 50 + 5;
+                    bar.style.height = `${height}px`;
+                    this.pitchHistoryDiv.appendChild(bar);
+                });
+            }
+
+            updatePersonalProfile() {
+                if (this.personalData.totalSamples < 50) return;
+                
+                // Calcular métricas de calidad vocal
+                const stability = this.calculateStability();
+                const clarity = this.calculateClarity();
+                const power = this.calculatePower();
+                
+                this.stabilityScore.textContent = `${Math.round(stability * 100)}%`;
+                this.clarityScore.textContent = `${Math.round(clarity * 100)}%`;
+                this.powerScore.textContent = `${Math.round(power * 100)}%`;
+                
+                // Determinar tipo vocal personalizado
+                const vocalType = this.determinePersonalVocalType();
+                const analysis = this.generatePersonalAnalysis();
+                
+                this.vocalProfile.innerHTML = `
+                    <div class="profile-type">${vocalType.type}</div>
+                    <div class="profile-details">${vocalType.description}</div>
+                    <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
+                        ${analysis}
+                    </div>
+                `;
+            }
+
+            calculateStability() {
+                if (this.personalData.frequencies.length < 10) return 0;
+                
+                const recentFreqs = this.personalData.frequencies.slice(-20);
+                const mean = recentFreqs.reduce((a, b) => a + b) / recentFreqs.length;
+                const variance = recentFreqs.reduce((sum, freq) => 
+                    sum + Math.pow(freq - mean, 2), 0) / recentFreqs.length;
+                const stdDev = Math.sqrt(variance);
+                
+                // Menor desviación estándar = mayor estabilidad
+                const stability = Math.max(0, 1 - (stdDev / (mean * 0.1)));
+                return Math.min(stability, 1);
+            }
+
+            calculateClarity() {
+                if (this.personalData.confidences.length < 10) return 0;
+                
+                const avgConfidence = this.personalData.confidences.reduce((a, b) => a + b) / 
+                                     this.personalData.confidences.length;
+                return avgConfidence;
+            }
+
+            calculatePower() {
+                if (this.personalData.amplitudes.length < 10) return 0;
+                
+                const avgAmplitude = this.personalData.amplitudes.reduce((a, b) => a + b) / 
+                                    this.personalData.amplitudes.length;
+                const normalizedPower = Math.min(avgAmplitude / 150, 1);
+                return normalizedPower;
+            }
+
+            determinePersonalVocalType() {
+                const low = this.personalData.lowestFreq;
+                const high = this.personalData.highestFreq;
+                const avgFreq = this.personalData.frequencies.reduce((a, b) => a + b) / 
+                               this.personalData.frequencies.length;
+                
+                if (low === Infinity || high === 0) {
+                    return {
+                        type: "📊 Análisis en progreso...",
+                        description: "Continúa cantando para obtener tu clasificación personal"
+                    };
+                }
+                
+                const range = this.calculateSemitones(low, high);
+                
+                // Clasificación más precisa basada en género seleccionado
+                let type, description, gender;
+                
+                if (this.selectedGender === 'female') {
+                    gender = "👩 Voz Femenina";
+                    
+                    if (low >= 261 && high >= 1047) { // C4 - C6
+                        type = "Soprano Coloratura";
+                        description = `Voz soprano con agilidad excepcional. Tu rango de ${range} semitonos alcanza registros muy agudos.`;
+                    } else if (low >= 261 && high >= 523) { // C4 - C5
+                        type = "Soprano Lírica";
+                        description = `Voz soprano brillante y expresiva. Rango de ${range} semitonos ideal para repertorio lírico.`;
+                    } else if (low >= 220 && high >= 880) { // A3 - A5
+                        type = "Mezzosoprano";
+                        description = `Voz versátil con gran riqueza timbrica. Tu rango de ${range} semitonos te permite repertorio variado.`;
+                    } else if (low >= 175 && high >= 698) { // F3 - F5
+                        type = "Contralto";
+                        description = `Voz grave femenina con carácter único. Rango de ${range} semitonos con resonancia profunda.`;
+                    } else if (avgFreq >= 300) {
+                        type = "Soprano/Mezzosoprano";
+                        description = `Tu voz presenta características entre soprano y mezzosoprano con ${range} semitonos.`;
+                    } else {
+                        type = "Mezzosoprano/Contralto";
+                        description = `Voz con características entre mezzosoprano y contralto, ${range} semitonos de extensión.`;
+                    }
+                    
+                } else if (this.selectedGender === 'male') {
+                    gender = "👨 Voz Masculina";
+                    
+                    if (low >= 131 && high >= 523) { // C3 - C5
+                        type = "Tenor Lírico";
+                        description = `Voz tenor brillante con excelente proyección. Tu rango de ${range} semitonos es ideal para ópera y musical.`;
+                    } else if (low >= 123 && high >= 493) { // B2 - B4
+                        type = "Tenor Dramático";
+                        description = `Voz tenor con potencia y carácter. Rango de ${range} semitonos perfecto para repertorio dramático.`;
+                    } else if (low >= 110 && high >= 440) { // A2 - A4
+                        type = "Barítono";
+                        description = `Voz masculina central versátil. Tu extensión de ${range} semitonos abarca un repertorio muy amplio.`;
+                    } else if (low >= 98 && high >= 392) { // G2 - G4
+                        type = "Bajo-Barítono";
+                        description = `Voz grave con flexibilidad hacia agudos. Rango de ${range} semitonos muy expresivo.`;
+                    } else if (low >= 82 && high >= 330) { // E2 - E4
+                        type = "Bajo Profundo";
+                        description = `Voz grave con resonancia excepcional. Tu rango de ${range} semitonos tiene presencia imponente.`;
+                    } else if (avgFreq <= 180) {
+                        type = "Bajo/Bajo-Barítono";
+                        description = `Voz grave masculina con ${range} semitonos de extensión vocal profunda.`;
+                    } else {
+                        type = "Barítono/Tenor";
+                        description = `Tu voz presenta características entre barítono y tenor con ${range} semitonos.`;
+                    }
+                }
+                
+                return {
+                    type: `${gender} - ${type}`,
+                    description: description
+                };
+            }
+
+            generatePersonalAnalysis() {
+                const stability = this.calculateStability();
+                const clarity = this.calculateClarity();
+                const power = this.calculatePower();
+                
+                let analysis = [];
+                
+                if (stability > 0.8) analysis.push("Excelente control de afinación");
+                else if (stability > 0.6) analysis.push("Buena estabilidad tonal");
+                else analysis.push("Trabaja en la estabilidad de tu afinación");
+                
+                if (clarity > 0.8) analysis.push("Claridad vocal excepcional");
+                else if (clarity > 0.6) analysis.push("Buena definición vocal");
+                else analysis.push("Mejora la proyección de tu voz");
+                
+                if (power > 0.7) analysis.push("Gran potencia vocal");
+                else if (power > 0.4) analysis.push("Potencia vocal moderada");
+                else analysis.push("Desarrolla más apoyo respiratorio");
+                
+                return analysis.join(" • ");
+            }
+
+            calculateSemitones(freq1, freq2) {
+                if (freq1 <= 0 || freq2 <= 0) return 0;
+                const higher = Math.max(freq1, freq2);
+                const lower = Math.min(freq1, freq2);
+                return Math.round(12 * Math.log2(higher / lower));
+            }
+
+            frequencyToNote(frequency) {
+                const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                const A4 = 440;
+                const C0 = A4 * Math.pow(2, -4.75);
+                
+                if (frequency > 0) {
+                    const h = Math.round(12 * Math.log2(frequency / C0));
+                    const octave = Math.floor(h / 12);
+                    const n = h % 12;
+                    return notes[n] + octave;
+                }
+                return '--';
+            }
+
+            stopAnalysis() {
+                this.isRecording = false;
+                
+                if (this.microphone) {
+                    this.microphone.disconnect();
+                }
+                
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.calibrateBtn.disabled = false;
+                this.recordingIndicator.style.display = 'none';
+                
+                // Mostrar resumen final
+                if (this.personalData.totalSamples > 0) {
+                    this.frequencyDisplay.innerHTML = `
+                        <div class="frequency-main">✅ Análisis Completado</div>
+                        <div class="frequency-note">Se analizaron ${this.personalData.totalSamples} muestras de tu voz</div>
+                    `;
+                }
+            }
+
+            resetAnalysis() {
+                this.stopAnalysis();
+                
+                // No resetear el género seleccionado
+                // this.selectedGender = '';
+                // this.genderSelect.value = '';
+                
+                // Resetear datos personales
+                this.personalData = {
+                    lowestFreq: Infinity,
+                    highestFreq: 0,
+                    frequencies: [],
+                    amplitudes: [],
+                    confidences: [],
+                    noteStability: [],
+                    totalSamples: 0
+                };
+                
+                this.pitchHistory = [];
+                
+                // Resetear displays pero mantener la información del género
+                if (this.selectedGender) {
+                    this.updateGenderSpecificSettings();
+                    this.calibrateBtn.disabled = false;
+                } else {
+                    this.frequencyDisplay.innerHTML = `
+                        <div class="frequency-main">Selecciona tu género primero</div>
+                        <div class="frequency-note">--</div>
+                    `;
+                    this.calibrateBtn.disabled = true;
+                }
+                
+                this.startBtn.disabled = true;
+                this.isCalibrated = false;
+                this.confidenceBar.style.width = '0%';
+                this.lowestNote.textContent = 'No detectada';
+                this.highestNote.textContent = 'No detectada';
+                this.rangeSize.textContent = '0';
+                this.averageNote.textContent = '--';
+                this.stabilityScore.textContent = '0%';
+                this.clarityScore.textContent = '0%';
+                this.powerScore.textContent = '0%';
+                this.pitchHistoryDiv.innerHTML = '';
+                
+                this.vocalProfile.innerHTML = `
+                    <div class="profile-type">Tu perfil vocal personalizado</div>
+                    <div class="profile-details">Completa el análisis para obtener tu clasificación precisa</div>
+                `;
+                
+                // Limpiar canvas
+                const ctx = this.canvasContext;
+                ctx.clearRect(0, 0, this.spectrumCanvas.width, this.spectrumCanvas.height);
+            }
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            new PersonalizedVocalAnalyzer();
+        });
+    </script>
+</body>
+</html>
